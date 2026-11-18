@@ -1,0 +1,368 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		A00000000000000000000017 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A00000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A00000000000000000000008;
+			remoteInfo = NotAnIsland;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A00000000000000000000006 /* NotAnIsland.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NotAnIsland.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000007 /* NotAnIslandTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotAnIslandTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A00000000000000000000004 /* NotAnIsland */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NotAnIsland;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000005 /* NotAnIslandTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NotAnIslandTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A00000000000000000000011 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000014 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A00000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000004 /* NotAnIsland */,
+				A00000000000000000000005 /* NotAnIslandTests */,
+				A00000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A00000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000006 /* NotAnIsland.app */,
+				A00000000000000000000007 /* NotAnIslandTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A00000000000000000000008 /* NotAnIsland */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000021 /* Build configuration list for PBXNativeTarget "NotAnIsland" */;
+			buildPhases = (
+				A00000000000000000000010 /* Sources */,
+				A00000000000000000000011 /* Frameworks */,
+				A00000000000000000000012 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A00000000000000000000004 /* NotAnIsland */,
+			);
+			name = NotAnIsland;
+			packageProductDependencies = (
+			);
+			productName = NotAnIsland;
+			productReference = A00000000000000000000006 /* NotAnIsland.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A00000000000000000000009 /* NotAnIslandTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A00000000000000000000024 /* Build configuration list for PBXNativeTarget "NotAnIslandTests" */;
+			buildPhases = (
+				A00000000000000000000013 /* Sources */,
+				A00000000000000000000014 /* Frameworks */,
+				A00000000000000000000015 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A00000000000000000000016 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A00000000000000000000005 /* NotAnIslandTests */,
+			);
+			name = NotAnIslandTests;
+			packageProductDependencies = (
+			);
+			productName = NotAnIslandTests;
+			productReference = A00000000000000000000007 /* NotAnIslandTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A00000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2720;
+				LastUpgradeCheck = 2720;
+				TargetAttributes = {
+					A00000000000000000000008 = {
+						CreatedOnToolsVersion = 27.2;
+					};
+					A00000000000000000000009 = {
+						CreatedOnToolsVersion = 27.2;
+						TestTargetID = A00000000000000000000008;
+					};
+				};
+			};
+			buildConfigurationList = A00000000000000000000018 /* Build configuration list for PBXProject "NotAnIsland" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A00000000000000000000002;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A00000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A00000000000000000000008 /* NotAnIsland */,
+				A00000000000000000000009 /* NotAnIslandTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A00000000000000000000012 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000015 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A00000000000000000000010 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A00000000000000000000013 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A00000000000000000000016 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A00000000000000000000008 /* NotAnIsland */;
+			targetProxy = A00000000000000000000017 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A00000000000000000000019 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A00000000000000000000020 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A00000000000000000000022 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NotAnIsland.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Not an Island";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Not an Island shows the current track from Music and lets you control playback from the notch.";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Not an Island shows a notice in the notch when Bluetooth devices such as AirPods connect or disconnect, with their battery levels.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "MIT License";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.arysha.NotAnIsland;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		A00000000000000000000023 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NotAnIsland.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Not an Island";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Not an Island shows the current track from Music and lets you control playback from the notch.";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Not an Island shows a notice in the notch when Bluetooth devices such as AirPods connect or disconnect, with their battery levels.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "MIT License";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.arysha.NotAnIsland;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		A00000000000000000000025 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.arysha.NotAnIslandTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NotAnIsland.app/Contents/MacOS/NotAnIsland";
+			};
+			name = Debug;
+		};
+		A00000000000000000000026 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.arysha.NotAnIslandTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NotAnIsland.app/Contents/MacOS/NotAnIsland";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A00000000000000000000018 /* Build configuration list for PBXProject "NotAnIsland" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000019 /* Debug */,
+				A00000000000000000000020 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000021 /* Build configuration list for PBXNativeTarget "NotAnIsland" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000022 /* Debug */,
+				A00000000000000000000023 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A00000000000000000000024 /* Build configuration list for PBXNativeTarget "NotAnIslandTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A00000000000000000000025 /* Debug */,
+				A00000000000000000000026 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A00000000000000000000001 /* Project object */;
+}

@@ -1,0 +1,13 @@
+# Build output
+build/
+DerivedData/
+
+# Xcode per-user state
+xcuserdata/
+*.xcuserstate
+
+# macOS
+.DS_Store
+
+# Local agent instructions
+CLAUDE.md
