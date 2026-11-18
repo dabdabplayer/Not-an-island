@@ -1,0 +1,24 @@
+name: PR acknowledgements
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  acknowledgements:
+    name: Acknowledgements checked
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test the checker
+        working-directory: .github/scripts
+        run: python3 -m unittest -v test_check_pr_acknowledgements
+      - name: Check the pull request description
+        working-directory: .github/scripts
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python3 check_pr_acknowledgements.py
