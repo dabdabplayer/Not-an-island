@@ -23,6 +23,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var notchController = NotchWindowController(activities: [music, system], moments: moments)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Unit tests build their own objects. Started here, the live features would ask for Bluetooth
+        // access, which blocks launch on a CI machine with nobody to answer. Set by the scheme's Test action.
+        guard ProcessInfo.processInfo.environment["NOT_AN_ISLAND_HOSTING_TESTS"] == nil else { return }
         notchController.start()
         music.start()
         system.start()
