@@ -1,8 +1,19 @@
 import AppKit
 
-/// The physical camera housing's position, in global screen coordinates.
+/// Where the notch sits, in global screen coordinates: the physical camera housing, or on a screen
+/// without one, an island drawn in the middle of the menu bar.
 struct NotchGeometry: Equatable, Sendable {
+    enum Kind: Equatable, Sendable {
+        case notch, island
+    }
+
+    nonisolated static let islandWidth: CGFloat = 126
+    /// The gap above and below the island inside the menu bar.
+    nonisolated static let islandInset: CGFloat = 1
+    nonisolated static let minimumIslandHeight: CGFloat = 20
+
     let notchRect: CGRect
+    let kind: Kind
 
     /// Returns nil for screens without a notch. Only the auxiliary areas' widths are used,
     /// so the result doesn't depend on which coordinate space AppKit reports them in.
@@ -18,6 +29,18 @@ struct NotchGeometry: Equatable, Sendable {
             width: notchWidth,
             height: topInset
         )
+        kind = .notch
+    }
+
+    init(islandAtTopOf screenFrame: CGRect, menuBarHeight: CGFloat) {
+        let height = max(menuBarHeight - 2 * Self.islandInset, Self.minimumIslandHeight)
+        notchRect = CGRect(
+            x: screenFrame.midX - Self.islandWidth / 2,
+            y: screenFrame.maxY - Self.islandInset - height,
+            width: Self.islandWidth,
+            height: height
+        )
+        kind = .island
     }
 
     /// The notch scaled around its horizontal centre, still hanging from the top edge of the screen.
@@ -41,13 +64,40 @@ struct NotchGeometry: Equatable, Sendable {
 }
 
 extension NotchGeometry {
+    /// The notch on a notched screen, otherwise an island in its menu bar.
     @MainActor
-    init?(screen: NSScreen) {
-        self.init(
+    init(screen: NSScreen) {
+        if let notch = NotchGeometry(
             screenFrame: screen.frame,
             topInset: screen.safeAreaInsets.top,
             leftAuxiliaryWidth: screen.auxiliaryTopLeftArea?.width,
             rightAuxiliaryWidth: screen.auxiliaryTopRightArea?.width
+        ) {
+            self = notch
+            return
+        }
+        // The visible frame stops below the menu bar; with the menu bar hidden, use its standard height.
+        let menuBarHeight = screen.frame.maxY - screen.visibleFrame.maxY
+        self.init(
+            islandAtTopOf: screen.frame,
+            menuBarHeight: menuBarHeight > 0 ? menuBarHeight : NSStatusBar.system.thickness
         )
+    }
+}
+
+/// A display and where its notch or island sits.
+struct NotchScreen: Equatable, Sendable {
+    let id: CGDirectDisplayID
+    let geometry: NotchGeometry
+
+    /// Every connected display. Mirrored displays appear once.
+    @MainActor
+    static func all() -> [NotchScreen] {
+        NSScreen.screens.compactMap { screen in
+            guard let id = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else {
+                return nil
+            }
+            return NotchScreen(id: id, geometry: NotchGeometry(screen: screen))
+        }
     }
 }

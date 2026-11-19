@@ -36,47 +36,34 @@ final class NotchHostingView<Content: View>: NSHostingView<Content> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
-/// Owns the notch panel's lifecycle, keeps it aligned with the notched screen, and runs
-/// hover expansion, activity transitions and moments.
+/// Gives every display its own notch panel: the real notch on a notched screen, an island elsewhere.
+/// All panels show the same activities and moments; each one expands on its own under the pointer.
 @MainActor
 final class NotchWindowController: NSObject {
     nonisolated static let expansionScale: CGFloat = 1.45
-    /// Debug-level, so it costs nothing unless streamed: `/usr/bin/log stream --level debug --predicate 'subsystem == "app.arysha.NotAnIsland"'`
-    private static let logger = Logger(subsystem: "app.arysha.NotAnIsland", category: "Notch")
 
     private let activities: [any NotchActivity]
     private let moments: NotchMoments
-    private let presentation: NotchPresentation
-    private var panel: NotchPanel?
-    private var hostingView: NSView?
-    private var geometry: NotchGeometry?
-    private var observedActivities: [NotchActivityMetrics?]?
-    private lazy var hover: NotchHoverModel = {
-        let model = NotchHoverModel(isPointerInside: { [weak self] in
-            guard let panel = self?.panel else { return false }
-            return panel.frame.contains(NSEvent.mouseLocation)
-        })
-        model.onExpansionChange = { [weak self] expanded in
-            guard let self else { return }
-            Self.logger.debug("Hover \(expanded ? "expands" : "collapses", privacy: .public) the notch")
-            if expanded {
-                // The expanded panel takes over from any banner.
-                moments.dismiss()
-            }
-            transition(to: makeState(isExpanded: expanded))
-            for activity in activities {
-                activity.notchDidChangeExpansion(expanded)
-            }
-        }
-        return model
-    }()
+    private let screens: @MainActor () -> [NotchScreen]
+    private var controllers: [CGDirectDisplayID: NotchScreenController] = [:]
+    private var isExpanded = false
 
     /// - Parameter activities: In priority order; the first active one with compact content owns the wings.
-    init(activities: [any NotchActivity], moments: NotchMoments) {
+    init(
+        activities: [any NotchActivity],
+        moments: NotchMoments,
+        screens: @escaping @MainActor () -> [NotchScreen] = NotchScreen.all
+    ) {
         self.activities = activities
         self.moments = moments
-        presentation = NotchPresentation(activities: activities)
+        self.screens = screens
         super.init()
+    }
+
+    var screenIDs: [CGDirectDisplayID] { controllers.keys.sorted() }
+
+    func panelFrame(for id: CGDirectDisplayID) -> CGRect? {
+        controllers[id]?.panelFrame
     }
 
     func start() {
@@ -86,54 +73,65 @@ final class NotchWindowController: NSObject {
             name: NSApplication.didChangeScreenParametersNotification,
             object: nil
         )
-        moments.isSuppressed = { [weak self] in self?.hover.isExpanded ?? false }
+        moments.isSuppressed = { [weak self] in self?.isExpanded ?? false }
         moments.onChange = { [weak self] moment in
-            guard let self else { return }
-            if let moment {
-                presentation.moment = moment
-            }
-            transition(to: makeState(isExpanded: presentation.state.isExpanded))
+            self?.controllers.values.forEach { $0.momentDidChange(moment) }
         }
-        updatePanel()
-        observeActivities()
+        screensDidChange()
+    }
+
+    func stop() {
+        NotificationCenter.default.removeObserver(self, name: NSApplication.didChangeScreenParametersNotification, object: nil)
+        controllers.values.forEach { $0.stop() }
+        controllers = [:]
+        updateExpansion()
     }
 
     @objc private func screenParametersDidChange(_ notification: Notification) {
-        updatePanel()
+        screensDidChange()
     }
 
-    /// Each activity's metrics in priority order, or nil while it is inactive.
-    private func currentActivities() -> [NotchActivityMetrics?] {
-        activities.map { $0.isActive ? $0.metrics : nil }
-    }
-
-    private func makeState(isExpanded: Bool) -> NotchState {
-        NotchState.make(isExpanded: isExpanded, activities: currentActivities(), momentSize: moments.current?.size)
-    }
-
-    /// Follows activities starting, stopping, or changing the room they need (for example, narrowing while idle).
-    private func observeActivities() {
-        let snapshot = withObservationTracking {
-            currentActivities()
-        } onChange: { [weak self] in
-            // Fires before the change is applied; read the new values on the next main-actor turn.
-            Task { @MainActor in self?.observeActivities() }
+    /// Adds, moves and removes panels to match the connected displays.
+    func screensDidChange() {
+        let current = screens()
+        let currentIDs = Set(current.map(\.id))
+        for (id, controller) in controllers where !currentIDs.contains(id) {
+            controller.stop()
+            controllers[id] = nil
         }
-        guard snapshot != observedActivities else { return }
-        observedActivities = snapshot
-        growCanvasIfNeeded()
-        transition(to: makeState(isExpanded: presentation.state.isExpanded))
+        for screen in current {
+            if let controller = controllers[screen.id] {
+                controller.update(geometry: screen.geometry)
+            } else {
+                let controller = NotchScreenController(
+                    geometry: screen.geometry,
+                    activities: activities,
+                    moments: moments,
+                    onExpansionChange: { [weak self] expanded in self?.screenDidChangeExpansion(expanded) }
+                )
+                controllers[screen.id] = controller
+                controller.start()
+            }
+        }
+        // A removed screen may have been the expanded one.
+        updateExpansion()
     }
 
-    /// The canvas only ever grows, and only between animations, so SwiftUI never sees it resize mid-animation.
-    private func growCanvasIfNeeded() {
-        guard let geometry else { return }
-        let needed = Self.canvasSize(geometry: geometry, activities: activities.map(\.metrics))
-        let current = presentation.canvasSize
-        guard needed.width > current.width || needed.height > current.height else { return }
-        presentation.canvasSize = CGSize(width: max(needed.width, current.width), height: max(needed.height, current.height))
-        if let panel {
-            coverPanel(panel.frame)
+    private func screenDidChangeExpansion(_ expanded: Bool) {
+        if expanded {
+            // The expanded panel takes over from any banner.
+            moments.dismiss()
+        }
+        updateExpansion()
+    }
+
+    /// Activities see one notch: expanded while any screen's panel is.
+    private func updateExpansion() {
+        let expanded = controllers.values.contains { $0.isExpanded }
+        guard expanded != isExpanded else { return }
+        isExpanded = expanded
+        for activity in activities {
+            activity.notchDidChangeExpansion(expanded)
         }
     }
 
@@ -179,23 +177,119 @@ final class NotchWindowController: NSObject {
             height: contentSize.height
         )
     }
+}
 
-    private func frame(for state: NotchState) -> CGRect? {
-        geometry.map { Self.frame(for: state, geometry: $0) }
+/// One display's panel: keeps it aligned with that screen's notch or island, and runs its
+/// hover expansion, activity transitions and moments.
+@MainActor
+final class NotchScreenController {
+    /// Debug-level, so it costs nothing unless streamed: `/usr/bin/log stream --level debug --predicate 'subsystem == "app.arysha.NotAnIsland"'`
+    private static let logger = Logger(subsystem: "app.arysha.NotAnIsland", category: "Notch")
+
+    private let activities: [any NotchActivity]
+    private let moments: NotchMoments
+    private let onExpansionChange: (Bool) -> Void
+    private let presentation: NotchPresentation
+    private var geometry: NotchGeometry
+    private var panel: NotchPanel?
+    private var hostingView: NSView?
+    private var observedActivities: [NotchActivityMetrics?]?
+    private lazy var hover: NotchHoverModel = {
+        let model = NotchHoverModel(isPointerInside: { [weak self] in
+            guard let panel = self?.panel else { return false }
+            return panel.frame.contains(NSEvent.mouseLocation)
+        })
+        model.onExpansionChange = { [weak self] expanded in
+            guard let self else { return }
+            Self.logger.debug("Hover \(expanded ? "expands" : "collapses", privacy: .public) the \(String(describing: self.geometry.kind), privacy: .public)")
+            onExpansionChange(expanded)
+            transition(to: makeState(isExpanded: expanded))
+        }
+        return model
+    }()
+
+    init(geometry: NotchGeometry, activities: [any NotchActivity], moments: NotchMoments, onExpansionChange: @escaping (Bool) -> Void) {
+        self.geometry = geometry
+        self.activities = activities
+        self.moments = moments
+        self.onExpansionChange = onExpansionChange
+        presentation = NotchPresentation(activities: activities)
     }
 
-    private func updatePanel() {
-        guard let geometry = NSScreen.screens.lazy.compactMap(NotchGeometry.init(screen:)).first else {
-            panel?.orderOut(nil)
-            panel = nil
-            self.geometry = nil
-            return
-        }
+    var isExpanded: Bool { hover.isExpanded }
+    var panelFrame: CGRect? { panel?.frame }
 
+    func start() {
+        presentation.state = makeState(isExpanded: false)
+        if let moment = moments.current {
+            presentation.moment = moment
+        }
+        layOut()
+        observeActivities()
+    }
+
+    func stop() {
+        panel?.orderOut(nil)
+        panel = nil
+        hostingView = nil
+    }
+
+    func update(geometry: NotchGeometry) {
+        guard geometry != self.geometry else { return }
         self.geometry = geometry
+        layOut()
+    }
+
+    func momentDidChange(_ moment: NotchMoment?) {
+        if let moment {
+            presentation.moment = moment
+        }
+        transition(to: makeState(isExpanded: presentation.state.isExpanded))
+    }
+
+    /// Each activity's metrics in priority order, or nil while it is inactive.
+    private func currentActivities() -> [NotchActivityMetrics?] {
+        activities.map { $0.isActive ? $0.metrics : nil }
+    }
+
+    private func makeState(isExpanded: Bool) -> NotchState {
+        NotchState.make(isExpanded: isExpanded, activities: currentActivities(), momentSize: moments.current?.size)
+    }
+
+    /// Follows activities starting, stopping, or changing the room they need (for example, narrowing while idle).
+    private func observeActivities() {
+        let snapshot = withObservationTracking {
+            currentActivities()
+        } onChange: { [weak self] in
+            // Fires before the change is applied; read the new values on the next main-actor turn.
+            Task { @MainActor in self?.observeActivities() }
+        }
+        guard panel != nil, snapshot != observedActivities else { return }
+        observedActivities = snapshot
+        growCanvasIfNeeded()
+        transition(to: makeState(isExpanded: presentation.state.isExpanded))
+    }
+
+    /// The canvas only ever grows, and only between animations, so SwiftUI never sees it resize mid-animation.
+    private func growCanvasIfNeeded() {
+        let needed = NotchWindowController.canvasSize(geometry: geometry, activities: activities.map(\.metrics))
+        let current = presentation.canvasSize
+        guard needed.width > current.width || needed.height > current.height else { return }
+        presentation.canvasSize = CGSize(width: max(needed.width, current.width), height: max(needed.height, current.height))
+        if let panel {
+            coverPanel(panel.frame)
+        }
+    }
+
+    private func frame(for state: NotchState) -> CGRect {
+        NotchWindowController.frame(for: state, geometry: geometry)
+    }
+
+    private func layOut() {
+        presentation.kind = geometry.kind
         presentation.notchSize = geometry.notchRect.size
-        presentation.canvasSize = Self.canvasSize(geometry: geometry, activities: activities.map(\.metrics))
-        let frame = Self.frame(for: presentation.state, geometry: geometry)
+        presentation.canvasSize = NotchWindowController.canvasSize(geometry: geometry, activities: activities.map(\.metrics))
+        let frame = frame(for: presentation.state)
         presentation.shapeSize = frame.size
 
         if panel == nil {
@@ -212,7 +306,7 @@ final class NotchWindowController: NSObject {
         guard let panel else { return }
         panel.cover(notchRect: rect)
         if let container = panel.contentView, let hostingView {
-            hostingView.frame = Self.contentFrame(in: container.bounds, contentSize: presentation.canvasSize)
+            hostingView.frame = NotchWindowController.contentFrame(in: container.bounds, contentSize: presentation.canvasSize)
         }
     }
 
@@ -247,11 +341,11 @@ final class NotchWindowController: NSObject {
     /// and only then does the panel shrink to the target. The shape is never clipped mid-animation
     /// and the window never lags behind it.
     private func transition(to state: NotchState) {
-        guard let panel, let target = frame(for: state) else {
-            // No notched screen right now (for example, lid closed); lay out from this state when it returns.
+        guard let panel else {
             presentation.state = state
             return
         }
+        let target = frame(for: state)
         Self.logger.debug("Transition to \(String(describing: state), privacy: .public), target \(String(describing: target), privacy: .public)")
         coverPanel(panel.frame.union(target))
 
@@ -267,11 +361,11 @@ final class NotchWindowController: NSObject {
             presentation.shapeSize = target.size
         } completion: { [weak self] in
             guard let self else { return }
-            guard presentation.state == state, let target = frame(for: state) else {
+            guard presentation.state == state else {
                 Self.logger.debug("Transition to \(String(describing: state), privacy: .public) superseded")
                 return
             }
-            coverPanel(target)
+            coverPanel(frame(for: state))
             Self.logger.debug("Transition finished; panel \(String(describing: self.panel?.frame), privacy: .public)")
         }
     }
@@ -327,6 +421,7 @@ final class NotchTrackingView: NSView {
 @Observable
 final class NotchPresentation {
     let activities: [any NotchActivity]
+    var kind: NotchGeometry.Kind = .notch
     var state = NotchState()
     var shapeSize: CGSize = .zero
     var notchSize: CGSize = .zero
@@ -345,7 +440,14 @@ struct NotchView: View {
     let onQuit: () -> Void
 
     var body: some View {
-        let shape = UnevenRoundedRectangle(bottomLeadingRadius: cornerRadius, bottomTrailingRadius: cornerRadius)
+        // A notch is flush with the top of the screen; an island is rounded all the way round.
+        let topRadius = presentation.kind == .island ? cornerRadius : 0
+        let shape = UnevenRoundedRectangle(
+            topLeadingRadius: topRadius,
+            bottomLeadingRadius: cornerRadius,
+            bottomTrailingRadius: cornerRadius,
+            topTrailingRadius: topRadius
+        )
 
         ZStack(alignment: .top) {
             shape.fill(.black)
@@ -369,7 +471,11 @@ struct NotchView: View {
         if state.isExpanded {
             return state.sections.isEmpty ? 14 : 22
         }
-        return state.momentSize == nil ? 8 : 18
+        if state.momentSize != nil {
+            return 18
+        }
+        // The compact island is a capsule.
+        return presentation.kind == .island ? presentation.notchSize.height / 2 : 8
     }
 
     @ViewBuilder
