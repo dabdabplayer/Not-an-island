@@ -1,0 +1,42 @@
+{
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "bars.svg",
+          "name": "bars"
+        },
+        {
+          "image-name": "notch.svg",
+          "name": "notch"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.5
+      }
+    }
+  ],
+  "supported-platforms": {
+    "squares": [
+      "macOS"
+    ]
+  },
+  "fill-specializations": [
+    {
+      "value": {
+        "automatic-gradient": "display-p3:0.24000,0.46000,1.00000,1.00000"
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "automatic-gradient": "display-p3:0.10000,0.17000,0.38000,1.00000"
+      }
+    }
+  ]
+}

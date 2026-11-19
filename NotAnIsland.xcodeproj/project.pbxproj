@@ -259,6 +259,7 @@
 		A00000000000000000000022 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotAnIsland.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -269,7 +270,7 @@
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Not an Island shows the current track from Music and lets you control playback from the notch.";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Not an Island shows a notice in the notch when Bluetooth devices such as AirPods connect or disconnect, with their battery levels.";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "MIT License";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "GPL-3.0 License";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -284,6 +285,7 @@
 		A00000000000000000000023 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotAnIsland.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -294,7 +296,7 @@
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Not an Island shows the current track from Music and lets you control playback from the notch.";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Not an Island shows a notice in the notch when Bluetooth devices such as AirPods connect or disconnect, with their battery levels.";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "MIT License";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "GPL-3.0 License";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
