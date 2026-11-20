@@ -42,7 +42,7 @@ final class NotchHostingView<Content: View>: NSHostingView<Content> {
 final class NotchWindowController: NSObject {
     nonisolated static let expansionScale: CGFloat = 1.45
 
-    private let activities: [any NotchActivity]
+    private let activities: NotchActivities
     private let moments: NotchMoments
     private let screens: @MainActor () -> [NotchScreen]
     private var controllers: [CGDirectDisplayID: NotchScreenController] = [:]
@@ -50,7 +50,7 @@ final class NotchWindowController: NSObject {
 
     /// - Parameter activities: In priority order; the first active one with compact content owns the wings.
     init(
-        activities: [any NotchActivity],
+        activities: NotchActivities,
         moments: NotchMoments,
         screens: @escaping @MainActor () -> [NotchScreen] = NotchScreen.all
     ) {
@@ -85,6 +85,11 @@ final class NotchWindowController: NSObject {
         controllers.values.forEach { $0.stop() }
         controllers = [:]
         updateExpansion()
+    }
+
+    /// Keeps every screen's notch open, or releases it; for content outside the panel's own views.
+    func setHeldOpen(_ held: Bool) {
+        controllers.values.forEach { $0.setHeldOpen(held) }
     }
 
     @objc private func screenParametersDidChange(_ notification: Notification) {
@@ -130,48 +135,81 @@ final class NotchWindowController: NSObject {
         let expanded = controllers.values.contains { $0.isExpanded }
         guard expanded != isExpanded else { return }
         isExpanded = expanded
-        for activity in activities {
+        for activity in activities.ordered {
             activity.notchDidChangeExpansion(expanded)
         }
     }
 
     // MARK: Layout
 
+    /// The notch's main shape: the wings, the expanded notch, or a banner. The bubble is separate.
     nonisolated static func frame(for state: NotchState, geometry: NotchGeometry) -> CGRect {
-        if state.isExpanded {
-            guard !state.sections.isEmpty else { return geometry.expandedRect(scale: expansionScale) }
-            let width = state.sections.map(\.size.width).max() ?? 0
-            let height = state.sections.reduce(0) { $0 + $1.size.height }
-            return geometry.expandedRect(contentSize: CGSize(width: width, height: height))
-        }
-
         let compact = state.compactActivity == nil
             ? geometry.notchRect
             : geometry.compactRect(sideWidth: state.compactSideWidth)
+
+        if state.isExpanded {
+            guard !state.sections.isEmpty else { return geometry.expandedRect(scale: expansionScale) }
+            var width = state.sections.map(\.size.width).max() ?? 0
+            let height = state.sections.reduce(0) { $0 + $1.size.height }
+            // Expanded from the bubble, the notch must still reach the pointer resting where the bubble was.
+            if let bubble = state.bubble, bubble.activity == state.focus {
+                let bubbleRect = geometry.bubbleRect(besides: compact, size: bubble.size)
+                width = max(width, 2 * (bubbleRect.maxX - geometry.notchRect.midX))
+            }
+            return geometry.expandedRect(contentSize: CGSize(width: width, height: height))
+        }
+
         guard let moment = state.momentSize else { return compact }
         return geometry.expandedRect(contentSize: CGSize(width: max(moment.width, compact.width), height: moment.height))
     }
 
+    /// The bubble beside the compact wings; none while expanded.
+    nonisolated static func bubbleFrame(for state: NotchState, geometry: NotchGeometry) -> CGRect? {
+        guard !state.isExpanded, let bubble = state.bubble else { return nil }
+        let compact = state.compactActivity == nil
+            ? geometry.notchRect
+            : geometry.compactRect(sideWidth: state.compactSideWidth)
+        return geometry.bubbleRect(besides: compact, size: bubble.size)
+    }
+
+    /// Everything the panel must cover in a state: the main shape and the bubble.
+    nonisolated static func panelFrame(for state: NotchState, geometry: NotchGeometry) -> CGRect {
+        let main = frame(for: state, geometry: geometry)
+        return bubbleFrame(for: state, geometry: geometry).map(main.union) ?? main
+    }
+
     /// The SwiftUI canvas is sized once to fit every state, so it never resizes during an animation.
+    /// It is centred on the notch, so its width covers the farthest reach on either side.
     nonisolated static func canvasSize(geometry: NotchGeometry, activities: [NotchActivityMetrics]) -> CGSize {
-        let everything = activities.map(Optional.some)
+        let everything = activities.enumerated().map { NotchActivityLayout(id: "\($0.offset)", metrics: $0.element) }
+        // The widest wings with the largest bubble beside them, whichever activities those come from.
+        let widestBubble = NotchState(
+            compactActivity: "wings",
+            compactSideWidth: activities.compactMap(\.compactSideWidth).max() ?? 0,
+            bubble: activities.compactMap(\.minimalSize).max { $0.width < $1.width }.map { NotchBubble(activity: "bubble", size: $0) }
+        )
         let states = [
             NotchState.make(isExpanded: true, activities: everything, momentSize: nil),
             NotchState.make(isExpanded: true, activities: [], momentSize: nil),
             NotchState.make(isExpanded: false, activities: everything, momentSize: NotchMoment.maximumSize),
+            widestBubble,
         ]
+        let midX = geometry.notchRect.midX
         return states.reduce(.zero) { size, state in
-            let frame = frame(for: state, geometry: geometry)
-            return CGSize(width: max(size.width, frame.width), height: max(size.height, frame.height))
+            let frame = panelFrame(for: state, geometry: geometry)
+            let halfWidth = max(midX - frame.minX, frame.maxX - midX)
+            return CGSize(width: max(size.width, 2 * halfWidth), height: max(size.height, frame.height))
         }
     }
 
-    /// SwiftUI content keeps one fixed size, centred horizontally and hanging from the top of the panel;
+    /// SwiftUI content keeps one fixed size, centred on the notch and hanging from the top of the panel;
     /// the panel clips it. A window resize therefore never reaches SwiftUI, where it would be animated
     /// together with the shape and make one side lead the other.
-    nonisolated static func contentFrame(in containerBounds: CGRect, contentSize: CGSize) -> CGRect {
+    /// - Parameter centreX: The notch's centre in the container; the container's own centre if nil.
+    nonisolated static func contentFrame(in containerBounds: CGRect, centreX: CGFloat? = nil, contentSize: CGSize) -> CGRect {
         CGRect(
-            x: containerBounds.midX - contentSize.width / 2,
+            x: (centreX ?? containerBounds.midX) - contentSize.width / 2,
             y: containerBounds.maxY - contentSize.height,
             width: contentSize.width,
             height: contentSize.height
@@ -186,14 +224,15 @@ final class NotchScreenController {
     /// Debug-level, so it costs nothing unless streamed: `/usr/bin/log stream --level debug --predicate 'subsystem == "app.arysha.NotAnIsland"'`
     private static let logger = Logger(subsystem: "app.arysha.NotAnIsland", category: "Notch")
 
-    private let activities: [any NotchActivity]
+    private let activities: NotchActivities
     private let moments: NotchMoments
     private let onExpansionChange: (Bool) -> Void
     private let presentation: NotchPresentation
     private var geometry: NotchGeometry
     private var panel: NotchPanel?
     private var hostingView: NSView?
-    private var observedActivities: [NotchActivityMetrics?]?
+    private var trackingView: NotchTrackingView?
+    private var observedActivities: [NotchActivityLayout]?
     private lazy var hover: NotchHoverModel = {
         let model = NotchHoverModel(isPointerInside: { [weak self] in
             guard let panel = self?.panel else { return false }
@@ -208,7 +247,7 @@ final class NotchScreenController {
         return model
     }()
 
-    init(geometry: NotchGeometry, activities: [any NotchActivity], moments: NotchMoments, onExpansionChange: @escaping (Bool) -> Void) {
+    init(geometry: NotchGeometry, activities: NotchActivities, moments: NotchMoments, onExpansionChange: @escaping (Bool) -> Void) {
         self.geometry = geometry
         self.activities = activities
         self.moments = moments
@@ -221,6 +260,7 @@ final class NotchScreenController {
 
     func start() {
         presentation.state = makeState(isExpanded: false)
+        presentation.bubble = bubblePlacement(for: presentation.state)
         if let moment = moments.current {
             presentation.moment = moment
         }
@@ -232,12 +272,17 @@ final class NotchScreenController {
         panel?.orderOut(nil)
         panel = nil
         hostingView = nil
+        trackingView = nil
     }
 
     func update(geometry: NotchGeometry) {
         guard geometry != self.geometry else { return }
         self.geometry = geometry
         layOut()
+    }
+
+    func setHeldOpen(_ held: Bool) {
+        hover.setHeldOpen(held)
     }
 
     func momentDidChange(_ moment: NotchMoment?) {
@@ -247,13 +292,30 @@ final class NotchScreenController {
         transition(to: makeState(isExpanded: presentation.state.isExpanded))
     }
 
-    /// Each activity's metrics in priority order, or nil while it is inactive.
-    private func currentActivities() -> [NotchActivityMetrics?] {
-        activities.map { $0.isActive ? $0.metrics : nil }
+    private func currentActivities() -> [NotchActivityLayout] {
+        activities.activeLayouts
     }
 
     private func makeState(isExpanded: Bool) -> NotchState {
-        NotchState.make(isExpanded: isExpanded, activities: currentActivities(), momentSize: moments.current?.size)
+        NotchState.make(
+            isExpanded: isExpanded,
+            focus: isExpanded ? hover.focus : nil,
+            activities: currentActivities(),
+            momentSize: moments.current?.size
+        )
+    }
+
+    /// Where the bubble sits relative to the top centre of the notch, which is where the canvas hangs from.
+    private func bubblePlacement(for state: NotchState) -> NotchBubblePlacement? {
+        guard let bubble = state.bubble, let rect = NotchWindowController.bubbleFrame(for: state, geometry: geometry) else {
+            return nil
+        }
+        let notch = geometry.notchRect
+        return NotchBubblePlacement(
+            activity: bubble.activity,
+            size: rect.size,
+            offset: CGSize(width: rect.midX - notch.midX, height: notch.maxY - rect.maxY)
+        )
     }
 
     /// Follows activities starting, stopping, or changing the room they need (for example, narrowing while idle).
@@ -272,7 +334,7 @@ final class NotchScreenController {
 
     /// The canvas only ever grows, and only between animations, so SwiftUI never sees it resize mid-animation.
     private func growCanvasIfNeeded() {
-        let needed = NotchWindowController.canvasSize(geometry: geometry, activities: activities.map(\.metrics))
+        let needed = NotchWindowController.canvasSize(geometry: geometry, activities: activities.ordered.map(\.metrics))
         let current = presentation.canvasSize
         guard needed.width > current.width || needed.height > current.height else { return }
         presentation.canvasSize = CGSize(width: max(needed.width, current.width), height: max(needed.height, current.height))
@@ -282,15 +344,16 @@ final class NotchScreenController {
     }
 
     private func frame(for state: NotchState) -> CGRect {
-        NotchWindowController.frame(for: state, geometry: geometry)
+        NotchWindowController.panelFrame(for: state, geometry: geometry)
     }
 
     private func layOut() {
         presentation.kind = geometry.kind
         presentation.notchSize = geometry.notchRect.size
-        presentation.canvasSize = NotchWindowController.canvasSize(geometry: geometry, activities: activities.map(\.metrics))
+        presentation.canvasSize = NotchWindowController.canvasSize(geometry: geometry, activities: activities.ordered.map(\.metrics))
         let frame = frame(for: presentation.state)
-        presentation.shapeSize = frame.size
+        presentation.shapeSize = NotchWindowController.frame(for: presentation.state, geometry: geometry).size
+        presentation.bubble = bubblePlacement(for: presentation.state)
 
         if panel == nil {
             let newPanel = NotchPanel(notchRect: frame)
@@ -301,20 +364,32 @@ final class NotchScreenController {
         coverPanel(frame)
     }
 
-    /// Resizes the panel and re-positions the fixed-size SwiftUI canvas inside it.
+    /// Resizes the panel, re-positions the fixed-size SwiftUI canvas over the notch inside it,
+    /// and gives the bubble its own hover region.
     private func coverPanel(_ rect: CGRect) {
         guard let panel else { return }
         panel.cover(notchRect: rect)
+        let origin = panel.frame.origin
         if let container = panel.contentView, let hostingView {
-            hostingView.frame = NotchWindowController.contentFrame(in: container.bounds, contentSize: presentation.canvasSize)
+            hostingView.frame = NotchWindowController.contentFrame(
+                in: container.bounds,
+                centreX: geometry.notchRect.midX - origin.x,
+                contentSize: presentation.canvasSize
+            )
+        }
+        let state = presentation.state
+        if let bubble = state.bubble, let rect = NotchWindowController.bubbleFrame(for: state, geometry: geometry) {
+            trackingView?.bubble = NotchTrackingView.Bubble(activity: bubble.activity, rect: rect.offsetBy(dx: -origin.x, dy: -origin.y))
+        } else {
+            trackingView?.bubble = nil
         }
     }
 
     private func makeContentView() -> NSView {
         let container = NotchTrackingView()
-        container.onPointerEntered = { [weak self] in
-            Self.logger.debug("Pointer entered")
-            self?.hover.pointerEntered()
+        container.onPointerEntered = { [weak self] bubble in
+            Self.logger.debug("Pointer entered \(bubble.map { "the \($0) bubble" } ?? "the notch", privacy: .public)")
+            self?.hover.pointerEntered(focus: bubble)
         }
         container.onPointerExited = { [weak self] speed in
             Self.logger.debug("Pointer exited at \(speed ?? -1, privacy: .public) pt/s")
@@ -327,11 +402,13 @@ final class NotchScreenController {
             onQuit: { NSApp.terminate(nil) }
         )
         .environment(\.notchHoldOpen, NotchHoldOpenAction { [weak self] held in self?.hover.setHeldOpen(held) })
+        .environment(\.notchSurface, ObjectIdentifier(presentation))
         let hostingView = NotchHostingView(rootView: rootView)
         // The engine owns the panel's frame; SwiftUI must not resize the window to fit its content.
         hostingView.sizingOptions = []
         container.addSubview(hostingView)
         self.hostingView = hostingView
+        trackingView = container
         return container
     }
 
@@ -349,16 +426,20 @@ final class NotchScreenController {
         Self.logger.debug("Transition to \(String(describing: state), privacy: .public), target \(String(describing: target), privacy: .public)")
         coverPanel(panel.frame.union(target))
 
+        let shapeSize = NotchWindowController.frame(for: state, geometry: geometry).size
+        let bubble = bubblePlacement(for: state)
         if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             presentation.state = state
-            presentation.shapeSize = target.size
+            presentation.shapeSize = shapeSize
+            presentation.bubble = bubble
             coverPanel(target)
             return
         }
 
         withAnimation(.smooth(duration: 0.3), completionCriteria: .removed) {
             presentation.state = state
-            presentation.shapeSize = target.size
+            presentation.shapeSize = shapeSize
+            presentation.bubble = bubble
         } completion: { [weak self] in
             guard let self else { return }
             guard presentation.state == state else {
@@ -375,21 +456,48 @@ final class NotchScreenController {
 /// Tracking lives on a plain view because NSHostingView manages its own tracking areas, and the owner
 /// must be an NSResponder so the handlers are real overrides of the selectors AppKit sends.
 final class NotchTrackingView: NSView {
-    var onPointerEntered: () -> Void = {}
+    /// A bubble's hover region, in this view's coordinates.
+    struct Bubble: Equatable {
+        var activity: String
+        var rect: CGRect
+    }
+
+    static let bubbleKey = "bubble"
+
+    /// Called with the activity whose bubble was entered, or nil for the notch itself.
+    var onPointerEntered: (String?) -> Void = { _ in }
     /// Speed in points per second, or nil if no movement was seen inside the notch.
     var onPointerExited: (Double?) -> Void = { _ in }
+
+    /// With a bubble, the notch region stops short of the gap before it, so the gap expands nothing.
+    var bubble: Bubble? {
+        didSet {
+            guard bubble != oldValue else { return }
+            updateTrackingAreas()
+        }
+    }
 
     private var speedTracker = PointerSpeedTracker()
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        updateTrackingAreas()
+    }
+
+    override func updateTrackingAreas() {
+        trackingAreas.forEach(removeTrackingArea)
         // `.activeAlways` is required: this agent app is never the active app.
-        addTrackingArea(NSTrackingArea(
-            rect: .zero,
-            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
-            owner: self,
-            userInfo: nil
-        ))
+        let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .mouseMoved, .activeAlways]
+        guard let bubble else {
+            addTrackingArea(NSTrackingArea(rect: .zero, options: options.union(.inVisibleRect), owner: self, userInfo: nil))
+            super.updateTrackingAreas()
+            return
+        }
+        var notch = bounds
+        notch.size.width = max(bubble.rect.minX - NotchGeometry.bubbleGap - bounds.minX, 0)
+        addTrackingArea(NSTrackingArea(rect: notch, options: options, owner: self, userInfo: nil))
+        addTrackingArea(NSTrackingArea(rect: bubble.rect, options: options, owner: self, userInfo: [Self.bubbleKey: bubble.activity]))
+        super.updateTrackingAreas()
     }
 
     @available(*, unavailable)
@@ -400,7 +508,7 @@ final class NotchTrackingView: NSView {
     override func mouseEntered(with event: NSEvent) {
         speedTracker.reset()
         speedTracker.record(screenLocation(of: event), at: event.timestamp)
-        onPointerEntered()
+        onPointerEntered(event.trackingArea?.userInfo?[Self.bubbleKey] as? String)
     }
 
     override func mouseMoved(with event: NSEvent) {
@@ -417,24 +525,33 @@ final class NotchTrackingView: NSView {
     }
 }
 
+/// Where the bubble sits, relative to the top centre of the notch.
+struct NotchBubblePlacement: Equatable {
+    var activity: String
+    var size: CGSize
+    var offset: CGSize
+}
+
 @MainActor
 @Observable
 final class NotchPresentation {
-    let activities: [any NotchActivity]
+    let activities: NotchActivities
     var kind: NotchGeometry.Kind = .notch
     var state = NotchState()
     var shapeSize: CGSize = .zero
     var notchSize: CGSize = .zero
     var canvasSize: CGSize = .zero
+    var bubble: NotchBubblePlacement?
     /// The latest moment. Kept after it ends so its content can fade out with the shape.
     var moment: NotchMoment?
 
-    init(activities: [any NotchActivity]) {
+    init(activities: NotchActivities) {
         self.activities = activities
     }
 }
 
 struct NotchView: View {
+    @Environment(\.openSettings) private var openSettings
     let presentation: NotchPresentation
     let onHide: () -> Void
     let onQuit: () -> Void
@@ -450,20 +567,43 @@ struct NotchView: View {
         )
 
         ZStack(alignment: .top) {
-            shape.fill(.black)
-            if presentation.state.isExpanded {
-                expandedContent
-            } else {
-                compactContent
+            ZStack(alignment: .top) {
+                shape.fill(.black)
+                if presentation.state.isExpanded {
+                    expandedContent
+                } else {
+                    compactContent
+                }
+            }
+            .frame(width: presentation.shapeSize.width, height: presentation.shapeSize.height)
+            .clipShape(shape)
+            .contextMenu { menu }
+
+            if let bubble = presentation.bubble, let activity = presentation.activities[bubble.activity] {
+                ZStack {
+                    Capsule().fill(.black)
+                    activity.minimalView()
+                }
+                .frame(width: bubble.size.width, height: bubble.size.height)
+                .clipShape(Capsule())
+                .contextMenu { menu }
+                .offset(bubble.offset)
+                .transition(.opacity.combined(with: .scale(scale: 0.5)))
             }
         }
-        .frame(width: presentation.shapeSize.width, height: presentation.shapeSize.height)
-        .clipShape(shape)
-        .contextMenu {
-            Button("Hide Not an Island", action: onHide)
-            Button("Quit Not an Island", action: onQuit)
-        }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    @ViewBuilder
+    private var menu: some View {
+        Button("Settings…") {
+            // An agent app's windows open behind the frontmost app unless it activates first.
+            NSApp.activate()
+            openSettings()
+        }
+        Divider()
+        Button("Hide Not an Island", action: onHide)
+        Button("Quit Not an Island", action: onQuit)
     }
 
     private var cornerRadius: CGFloat {
@@ -484,7 +624,7 @@ struct NotchView: View {
         if !sections.isEmpty {
             VStack(spacing: 0) {
                 ForEach(sections, id: \.activity) { section in
-                    presentation.activities[section.activity].expandedView()
+                    presentation.activities[section.activity]?.expandedView()
                         .frame(width: section.size.width, height: section.size.height)
                 }
             }
@@ -498,12 +638,11 @@ struct NotchView: View {
         let state = presentation.state
         let notch = presentation.notchSize
         VStack(spacing: 0) {
-            if let owner = state.compactActivity {
+            if let owner = state.compactActivity, let activity = presentation.activities[owner] {
                 // Without a banner, derived from the animated shape width so the content moves with the edges.
                 let sideWidth = state.momentSize == nil
                     ? max((presentation.shapeSize.width - notch.width) / 2, 0)
                     : state.compactSideWidth
-                let activity = presentation.activities[owner]
                 HStack(spacing: 0) {
                     activity.compactLeadingView()
                         .frame(width: sideWidth)

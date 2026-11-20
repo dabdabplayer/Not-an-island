@@ -8,7 +8,7 @@ struct NotAnIslandApp: App {
     var body: some Scene {
         // SwiftUI requires at least one scene; the notch itself is an AppKit panel owned by Core.
         Settings {
-            EmptyView()
+            SettingsView(activities: appDelegate.activities, priority: appDelegate.priority)
         }
     }
 }
@@ -19,8 +19,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let music = MusicActivity()
     private lazy var system = SystemActivity(moments: moments)
     private lazy var bluetooth = BluetoothMonitor(moments: moments)
-    /// Music comes first: it owns the compact wings and the top of the expanded notch.
-    private lazy var notchController = NotchWindowController(activities: [music, system], moments: moments)
+    let priority = ActivityPriority()
+    private(set) lazy var activities = NotchActivities(builtIns)
+    private var builtIns: [any NotchActivity] { [music, system] }
+    private lazy var notchController = NotchWindowController(activities: activities, moments: moments)
+    private let extensionDiscovery = ExtensionDiscovery()
+    private var extensions: [String: InstalledExtension] = [:]
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Unit tests build their own objects. Started here, the live features would ask for Bluetooth
@@ -30,6 +34,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         music.start()
         system.start()
         bluetooth.start()
+        extensionDiscovery.start()
+        updateActivities()
+    }
+
+    /// Keeps the notch's activities in step with the enabled extensions and the user's order.
+    /// Each extension keeps its process and connected views for as long as it stays enabled.
+    private func updateActivities() {
+        let (identities, _) = withObservationTracking {
+            (extensionDiscovery.identities, priority.order)
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in self?.updateActivities() }
+        }
+        let enabled = Set(identities.map(\.bundleIdentifier))
+        for (id, installed) in extensions where !enabled.contains(id) {
+            installed.session.stop()
+            extensions[id] = nil
+        }
+        for identity in identities where extensions[identity.bundleIdentifier] == nil {
+            let installed = InstalledExtension(identity: identity, moments: moments) { [weak self] held in
+                self?.notchController.setHeldOpen(held)
+            }
+            extensions[identity.bundleIdentifier] = installed
+            Task { await installed.session.start() }
+        }
+        let available = builtIns + identities.compactMap { extensions[$0.bundleIdentifier]?.activity as (any NotchActivity)? }
+        let byID = Dictionary(uniqueKeysWithValues: available.map { ($0.id, $0) })
+        activities.ordered = priority.ordered(available.map(\.id)).compactMap { byID[$0] }
     }
 
     // With no Dock icon, opening the app again is the only way back after "Hide Not an Island".

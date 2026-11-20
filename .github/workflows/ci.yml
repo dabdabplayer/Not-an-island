@@ -35,6 +35,19 @@ jobs:
             -derivedDataPath build \
             -resultBundlePath build/TestResults.xcresult
 
+      - name: Test the extension SDK
+        run: swift test
+
+      # CI has no signing identity; the example only needs to compile and embed its extension.
+      - name: Build the Timer example extension
+        run: |
+          xcodebuild build \
+            -project Examples/Timer/Timer.xcodeproj \
+            -scheme Timer \
+            -destination 'platform=macOS' \
+            -derivedDataPath build/TimerExample \
+            CODE_SIGNING_ALLOWED=NO
+
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@v4

@@ -58,6 +58,46 @@ struct MusicCompactVisualizer: View {
     }
 }
 
+/// Music's bubble: the artwork in a circle, ringed by short bars in the artwork's colours that
+/// pulse while playing. Like the compact bars, the ring is decorative and doesn't follow the audio.
+struct MusicMinimalView: View {
+    let music: MusicActivity
+
+    private static let tickCount = 12
+    private static let artworkInset: CGFloat = 5
+
+    var body: some View {
+        let colors = music.artworkColors.isEmpty ? [NSColor.white] : music.artworkColors
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: !music.isPlaying)) { context in
+            let time = context.date.timeIntervalSinceReferenceDate
+            Canvas { graphics, size in
+                let centre = CGPoint(x: size.width / 2, y: size.height / 2)
+                let outer = min(size.width, size.height) / 2 - 0.5
+                let inner = outer - Self.artworkInset + 1.5
+                for tick in 0..<Self.tickCount {
+                    let angle = Double(tick) / Double(Self.tickCount) * 2 * .pi
+                    let pulse = music.isPlaying ? 0.5 + 0.5 * abs(sin(time * 2.4 + Double(tick) * 1.7)) : 0.35
+                    let start = inner
+                    let end = inner + (outer - inner) * pulse
+                    var path = Path()
+                    path.move(to: CGPoint(x: centre.x + cos(angle) * start, y: centre.y + sin(angle) * start))
+                    path.addLine(to: CGPoint(x: centre.x + cos(angle) * end, y: centre.y + sin(angle) * end))
+                    let color = Color(nsColor: colors[tick % colors.count])
+                    graphics.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                }
+            }
+        }
+        .overlay {
+            MusicArtworkView(artwork: music.artwork, cornerRadius: 0)
+                .clipShape(Circle())
+                .padding(Self.artworkInset)
+        }
+        .modifier(IdleDimming(isIdle: music.isIdle))
+        .accessibilityElement()
+        .accessibilityLabel(Text("Music"))
+    }
+}
+
 /// Decorative waveform bars filled with a gradient of the artwork's colours, in the style of the
 /// Dynamic Island. They do not reflect the actual audio.
 struct MusicVisualizer: NSViewRepresentable {

@@ -11,3 +11,7 @@ xcuserdata/
 
 # Local agent instructions
 CLAUDE.md
+
+# Swift Package Manager
+.build/
+.swiftpm/

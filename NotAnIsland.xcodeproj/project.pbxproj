@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A00000000000000000000031 /* NotAnIsland.appextensionpoint in Embed Extension Point */ = {isa = PBXBuildFile; fileRef = A00000000000000000000030 /* NotAnIsland.appextensionpoint */; };
+		A00000000000000000000042 /* NotAnIslandKit in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000041 /* NotAnIslandKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		A00000000000000000000017 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -16,7 +21,22 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		A00000000000000000000032 /* Embed Extension Point */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				A00000000000000000000031 /* NotAnIsland.appextensionpoint in Embed Extension Point */,
+			);
+			name = "Embed Extension Point";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		A00000000000000000000030 /* NotAnIsland.appextensionpoint */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = NotAnIsland.appextensionpoint; sourceTree = "<group>"; };
 		A00000000000000000000006 /* NotAnIsland.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NotAnIsland.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000007 /* NotAnIslandTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotAnIslandTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -39,6 +59,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A00000000000000000000042 /* NotAnIslandKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,6 +76,7 @@
 		A00000000000000000000002 = {
 			isa = PBXGroup;
 			children = (
+				A00000000000000000000030 /* NotAnIsland.appextensionpoint */,
 				A00000000000000000000004 /* NotAnIsland */,
 				A00000000000000000000005 /* NotAnIslandTests */,
 				A00000000000000000000003 /* Products */,
@@ -80,6 +102,7 @@
 				A00000000000000000000010 /* Sources */,
 				A00000000000000000000011 /* Frameworks */,
 				A00000000000000000000012 /* Resources */,
+				A00000000000000000000032 /* Embed Extension Point */,
 			);
 			buildRules = (
 			);
@@ -90,6 +113,7 @@
 			);
 			name = NotAnIsland;
 			packageProductDependencies = (
+				A00000000000000000000041 /* NotAnIslandKit */,
 			);
 			productName = NotAnIsland;
 			productReference = A00000000000000000000006 /* NotAnIsland.app */;
@@ -138,6 +162,9 @@
 				};
 			};
 			buildConfigurationList = A00000000000000000000018 /* Build configuration list for PBXProject "NotAnIsland" */;
+			packageReferences = (
+				A00000000000000000000040 /* XCLocalSwiftPackageReference "." */,
+			);
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -365,6 +392,21 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A00000000000000000000040 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A00000000000000000000041 /* NotAnIslandKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A00000000000000000000040 /* XCLocalSwiftPackageReference "." */;
+			productName = NotAnIslandKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A00000000000000000000001 /* Project object */;
 }

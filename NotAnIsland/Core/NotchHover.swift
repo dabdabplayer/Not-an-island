@@ -11,6 +11,8 @@ final class NotchHoverModel {
     nonisolated static let fastExitSpeed: Double = 2000
 
     private(set) var isExpanded = false
+    /// The activity whose bubble the pointer entered; the expanded notch shows it alone.
+    private(set) var focus: String?
     private(set) var pendingCollapse: Task<Void, Never>?
     private(set) var isHeldOpen = false
     var onExpansionChange: (Bool) -> Void = { _ in }
@@ -35,10 +37,13 @@ final class NotchHoverModel {
         return slowestCollapseDelay - (slowestCollapseDelay - fastestCollapseDelay) * progress
     }
 
-    func pointerEntered() {
+    /// - Parameter focus: The activity whose bubble was entered, or nil for the notch itself.
+    ///   Ignored while already expanded, so moving across the expanded notch keeps what it shows.
+    func pointerEntered(focus: String? = nil) {
         pendingCollapse?.cancel()
         pendingCollapse = nil
         guard !isExpanded else { return }
+        self.focus = focus
         setExpanded(true)
     }
 
@@ -76,6 +81,9 @@ final class NotchHoverModel {
 
     private func setExpanded(_ expanded: Bool) {
         isExpanded = expanded
+        if !expanded {
+            focus = nil
+        }
         onExpansionChange(expanded)
     }
 }

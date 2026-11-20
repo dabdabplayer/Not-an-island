@@ -304,6 +304,17 @@ struct MusicIdleTests {
         #expect(activity.metrics.compactSideWidth == MusicActivity.activeSideWidth)
     }
 
+    // Behind another activity's wings, Music shows as a bubble.
+    @Test func offersABubbleNoTallerThanTheNotch() throws {
+        let activity = makeActivity()
+        activity.handlePlayerInfo(MusicPayloads.playing)
+
+        let size = try #require(activity.metrics.minimalSize)
+        #expect(size == MusicActivity.minimalSize)
+        #expect(size.width == size.height)
+        #expect(size.height <= 32)
+    }
+
     @Test func pausedMusicGoesIdleAfterTheDelay() async {
         let activity = makeActivity()
         activity.handlePlayerInfo(MusicPayloads.with(state: "Paused"))

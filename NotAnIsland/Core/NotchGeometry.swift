@@ -11,6 +11,10 @@ struct NotchGeometry: Equatable, Sendable {
     /// The gap above and below the island inside the menu bar.
     nonisolated static let islandInset: CGFloat = 1
     nonisolated static let minimumIslandHeight: CGFloat = 20
+    /// Space between the right wing and the bubble.
+    nonisolated static let bubbleGap: CGFloat = 6
+    /// A bubble is at most this many times wider than it is tall.
+    nonisolated static let maximumBubbleAspect: CGFloat = 3
 
     let notchRect: CGRect
     let kind: Kind
@@ -51,6 +55,13 @@ struct NotchGeometry: Equatable, Sendable {
     /// The notch widened on both sides; compact content sits beside the camera, never over it.
     func compactRect(sideWidth: CGFloat) -> CGRect {
         notchRect.insetBy(dx: -sideWidth, dy: 0)
+    }
+
+    /// A bubble beside the compact wings, centred on the camera band and never taller than it.
+    func bubbleRect(besides compact: CGRect, size: CGSize) -> CGRect {
+        let height = min(size.height, notchRect.height)
+        let width = min(size.width, height * Self.maximumBubbleAspect)
+        return CGRect(x: compact.maxX + Self.bubbleGap, y: notchRect.midY - height / 2, width: width, height: height)
     }
 
     /// A panel whose content area hangs below the camera band, never narrower than the notch itself.

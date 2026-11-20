@@ -80,6 +80,7 @@ final class MusicActivity: NSObject, NotchActivity {
     nonisolated static let idleDelay: Duration = .milliseconds(2500)
     nonisolated static let activeSideWidth: CGFloat = 36
     nonisolated static let idleSideWidth: CGFloat = 28
+    nonisolated static let minimalSize = CGSize(width: 26, height: 26)
     nonisolated static let expandedWidth: CGFloat = 380
     nonisolated static let expandedHeight: CGFloat = 140
     nonisolated static let outputRowHeight: CGFloat = 30
@@ -109,6 +110,8 @@ final class MusicActivity: NSObject, NotchActivity {
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let sleep: (Duration) async throws -> Void
 
+    let id = "builtin.music"
+    let name = "Music"
     var isActive: Bool { info.map { $0.state != .stopped } ?? false }
     var isPlaying: Bool { info?.state == .playing }
 
@@ -118,7 +121,8 @@ final class MusicActivity: NSObject, NotchActivity {
             expandedSectionSize: CGSize(
                 width: Self.expandedWidth,
                 height: Self.expandedHeight + (isOutputPickerOpen ? Self.outputPickerHeight(rows: outputs.devices.count) : 0)
-            )
+            ),
+            minimalSize: Self.minimalSize
         )
     }
 
@@ -250,6 +254,10 @@ final class MusicActivity: NSObject, NotchActivity {
 
     func expandedView() -> AnyView {
         AnyView(MusicExpandedView(music: self))
+    }
+
+    func minimalView() -> AnyView {
+        AnyView(MusicMinimalView(music: self))
     }
 
     func notchDidChangeExpansion(_ isExpanded: Bool) {

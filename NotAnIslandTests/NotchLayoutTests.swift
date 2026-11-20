@@ -14,8 +14,15 @@ struct NotchLayoutTests {
     private let music = NotchActivityMetrics(compactSideWidth: 36, expandedSectionSize: CGSize(width: 380, height: 140))
     private let stats = NotchActivityMetrics(compactSideWidth: nil, expandedSectionSize: CGSize(width: 380, height: 44))
 
+    /// Activities named by their position; nil marks an inactive one.
+    private func layouts(_ activities: [NotchActivityMetrics?]) -> [NotchActivityLayout] {
+        activities.enumerated().compactMap { index, metrics in
+            metrics.map { NotchActivityLayout(id: "\(index)", metrics: $0) }
+        }
+    }
+
     private func frame(expanded: Bool, _ activities: [NotchActivityMetrics?], moment: CGSize? = nil) -> CGRect {
-        let state = NotchState.make(isExpanded: expanded, activities: activities, momentSize: moment)
+        let state = NotchState.make(isExpanded: expanded, activities: layouts(activities), momentSize: moment)
         return NotchWindowController.frame(for: state, geometry: geometry)
     }
 
@@ -30,9 +37,9 @@ struct NotchLayoutTests {
 
     @Test func firstActiveCompactActivityOwnsTheWings() {
         let other = NotchActivityMetrics(compactSideWidth: 50, expandedSectionSize: nil)
-        let state = NotchState.make(isExpanded: false, activities: [nil, music, other], momentSize: nil)
+        let state = NotchState.make(isExpanded: false, activities: layouts([nil, music, other]), momentSize: nil)
 
-        #expect(state.compactActivity == 1)
+        #expect(state.compactActivity == "1")
         #expect(frame(expanded: false, [nil, music, other]) == geometry.compactRect(sideWidth: 36))
     }
 
@@ -41,9 +48,9 @@ struct NotchLayoutTests {
     }
 
     @Test func expandedSectionsStackTopToBottom() {
-        let state = NotchState.make(isExpanded: true, activities: [music, stats], momentSize: nil)
+        let state = NotchState.make(isExpanded: true, activities: layouts([music, stats]), momentSize: nil)
 
-        #expect(state.sections.map(\.activity) == [0, 1])
+        #expect(state.sections.map(\.activity) == ["0", "1"])
         #expect(frame(expanded: true, [music, stats])
             == geometry.expandedRect(contentSize: CGSize(width: 380, height: 184)))
     }

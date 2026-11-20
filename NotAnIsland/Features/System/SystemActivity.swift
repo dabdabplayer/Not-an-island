@@ -124,6 +124,8 @@ final class SystemActivity: NotchActivity {
     @ObservationIgnored private var memoryPressureSource: (any DispatchSourceMemoryPressure)?
     @ObservationIgnored private var previousSample: (date: Date, cpu: CPUTicks?, network: NetworkBytes?)?
 
+    let id = "builtin.system"
+    let name = "System"
     var isActive: Bool { true }
 
     var metrics: NotchActivityMetrics {

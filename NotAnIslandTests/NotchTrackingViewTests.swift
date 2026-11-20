@@ -33,7 +33,7 @@ struct NotchTrackingViewTests {
     @Test func forwardsAppKitEnterAndExitSelectors() throws {
         let view = NotchTrackingView()
         var events: [String] = []
-        view.onPointerEntered = { events.append("entered") }
+        view.onPointerEntered = { _ in events.append("entered") }
         view.onPointerExited = { _ in events.append("exited") }
 
         let entered = #selector(NSResponder.mouseEntered(with:))
