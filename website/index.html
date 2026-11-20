@@ -4,124 +4,160 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Not an Island</title>
-  <meta name="description" content="A dynamic notch for your Mac. Music, system status and community extensions, in the space around the camera. Free and open source.">
+  <meta name="description" content="A dynamic notch for your Mac, made by the community, for the community. Music, system status and extensions in the space around the camera. Free and open source.">
+  <meta name="theme-color" content="#2a63f6">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="icon.png">
+  <link rel="preload" href="fonts/BricolageGrotesque.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="stage">
-    <div class="screen">
-      <button class="notch" type="button" aria-expanded="false" aria-label="Show the expanded notch">
-        <span class="wings" aria-hidden="true">
-          <span class="art"></span>
-          <span class="bars"><i></i><i></i><i></i><i></i></span>
-        </span>
-        <span class="panel" aria-hidden="true">
-          <span class="art art-large"></span>
-          <span class="track">
-            <span class="title">Low Tide</span>
-            <span class="artist">Harbour Lights</span>
-            <span class="progress"><span></span></span>
-            <span class="controls">
-              <svg viewBox="0 0 24 24"><path d="M11 6v12L3 12zm9 0v12l-8-6z"/></svg>
-              <svg viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>
-              <svg viewBox="0 0 24 24"><path d="M4 6v12l8-6zm9 0v12l8-6z"/></svg>
-            </span>
+  <!-- A working notch at the top of the window. It shows what the section you're reading is about. -->
+  <div class="live" data-scene="music" aria-hidden="true">
+    <div class="island">
+      <div class="wings">
+        <span class="art"></span>
+        <span class="bars"><i></i><i></i><i></i><i></i></span>
+      </div>
+      <div class="moment">
+        <svg class="bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+        <span class="moment-title">Charging</span>
+        <span class="moment-value">82%</span>
+      </div>
+      <div class="panel panel-music">
+        <span class="art art-large"></span>
+        <span class="track">
+          <span class="track-title">Low Tide</span>
+          <span class="track-artist">Harbour Lights</span>
+          <span class="progress"><span></span></span>
+          <span class="controls">
+            <svg viewBox="0 0 24 24"><path d="M11 6v12L3 12zm9 0v12l-8-6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M4 6v12l8-6zm9 0v12l8-6z"/></svg>
           </span>
         </span>
-      </button>
+      </div>
+      <div class="panel panel-timer">
+        <span class="timer-label">Tea</span>
+        <span class="timer-time" data-timer>4:00</span>
+        <span class="timer-buttons"><span>Pause</span><span>Cancel</span></span>
+      </div>
     </div>
-    <p class="hint" aria-hidden="true">Point at the notch</p>
+    <div class="bubble">
+      <svg viewBox="0 0 26 26"><circle class="ring-track" cx="13" cy="13" r="9"/><circle class="ring" cx="13" cy="13" r="9" pathLength="100"/></svg>
+    </div>
+  </div>
+
+  <header class="hero" data-scene="music">
+    <div class="hero-inner">
+      <h1>Not an Island</h1>
+      <div class="hero-row">
+        <p class="tagline">Made by the community, for the community.</p>
+        <div class="hero-download">
+          <p class="lede">A dynamic notch for your Mac. What's playing, what your Mac is doing and what you're waiting for, in the space around the camera.</p>
+          <a class="button button-light" href="https://github.com/dabdabplayer/Not-an-island/releases/latest/download/NotAnIsland.dmg">Download for macOS</a>
+          <p class="requirements">Free and open source. Requires macOS 15 Sequoia or later.<span class="version" hidden></span></p>
+        </div>
+      </div>
+    </div>
   </header>
 
   <main>
-    <section class="intro">
-      <img class="icon" src="icon.png" alt="" width="96" height="96">
-      <h1>Not an Island</h1>
-      <p class="lede">A dynamic notch for your Mac. What's playing, what your Mac is doing and what you're waiting for, in the space around the camera.</p>
-      <div class="download">
-        <a class="button" href="https://github.com/dabdabplayer/Not-an-island/releases/latest/download/NotAnIsland.dmg">Download for macOS</a>
-        <p class="requirements">Free and open source. Requires macOS 15 Sequoia or later.<span class="version" hidden></span></p>
-      </div>
+    <section class="features" aria-labelledby="features">
+      <h2 id="features">Everything happens in the notch</h2>
+      <p class="section-lede">Point at it to open it. Move away and it tucks itself back around the camera.</p>
+
+      <article class="feature" data-scene="music">
+        <div class="mini" aria-hidden="true"><span class="mini-island mini-wings"><span class="art"></span><span class="bars"><i></i><i></i><i></i><i></i></span></span></div>
+        <div>
+          <h3>Music</h3>
+          <p>Artwork and a moving visualiser either side of the camera while Apple Music plays. Open the notch for the track, a scrubber and playback controls.</p>
+        </div>
+      </article>
+
+      <article class="feature" data-scene="charging">
+        <div class="mini" aria-hidden="true"><span class="mini-island mini-moment"><svg class="bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>Charging<b>82%</b></span></div>
+        <div>
+          <h3>Your Mac at a glance</h3>
+          <p>CPU, memory and network when you open the notch. A short notice drops down when you plug in, unplug or connect your AirPods.</p>
+        </div>
+      </article>
+
+      <article class="feature" data-scene="timer">
+        <div class="mini" aria-hidden="true"><span class="mini-island mini-wings"><span class="art"></span><span class="bars"><i></i><i></i><i></i><i></i></span></span><span class="mini-bubble"></span></div>
+        <div>
+          <h3>Extensions</h3>
+          <p>Timers, scores, deliveries: anyone can build an activity for the notch. When two are running, the second waits in a bubble beside the first. You choose which ones run, and in what order.</p>
+        </div>
+      </article>
+
+      <article class="feature" data-scene="music">
+        <div class="mini mini-plain" aria-hidden="true"><span class="mini-island mini-floating"><span class="art"></span><span class="bars"><i></i><i></i><i></i><i></i></span></span></div>
+        <div>
+          <h3>Any display</h3>
+          <p>On a Mac or monitor without a notch, the same activities live in an island at the top of the screen.</p>
+        </div>
+      </article>
     </section>
 
-    <section aria-labelledby="features">
-      <h2 id="features">What it does</h2>
-      <dl class="features">
-        <div>
-          <dt>Music</dt>
-          <dd>Artwork and a moving visualiser beside the camera while Apple Music plays. Point at the notch for the track, a scrubber and playback controls.</dd>
-        </div>
-        <div>
-          <dt>Your Mac at a glance</dt>
-          <dd>CPU, memory and network in the expanded notch, with a short notice when you plug in, unplug or connect your AirPods.</dd>
-        </div>
-        <div>
-          <dt>Extensions</dt>
-          <dd>Timers, scores, deliveries: anyone can build an activity for the notch. Choose which ones you run and in what order.</dd>
-        </div>
-        <div>
-          <dt>Any display</dt>
-          <dd>On a Mac or monitor without a notch, the same activities live in an island at the top of the screen.</dd>
-        </div>
-      </dl>
-    </section>
-
-    <section aria-labelledby="install">
-      <h2 id="install">Installing</h2>
+    <section class="install" aria-labelledby="install" data-scene="music">
+      <h2 id="install">Install it in a minute</h2>
       <ol class="steps">
         <li>Open <strong>NotAnIsland.dmg</strong> and drag Not an Island into Applications.</li>
-        <li>Open Not an Island. macOS says it can't be opened, because the app isn't notarised by Apple yet. Click <strong>Done</strong>.</li>
-        <li>Open <strong>System Settings ▸ Privacy &amp; Security</strong>, scroll down and click <strong>Open Anyway</strong> next to Not an Island. Confirm with your password.</li>
+        <li>Open Not an Island. macOS says it can't be opened, because Apple hasn't notarised it yet. Click <strong>Done</strong>.</li>
+        <li>In <strong>System Settings ▸ Privacy &amp; Security</strong>, scroll down, click <strong>Open Anyway</strong> next to Not an Island and confirm with your password.</li>
       </ol>
-      <p class="note">You only do this once per version. Each update asks again for its Music and Bluetooth permissions.</p>
-    </section>
-
-    <section aria-labelledby="developers">
-      <h2 id="developers">Build an extension</h2>
-      <p>Extensions are SwiftUI views that Not an Island draws in the notch, each running in its own sandboxed process. The NotAnIslandKit package gives you the wings, the bubble beside them, the expanded view and banners, and Not an Island handles every animation.</p>
-      <p>Like Not an Island, every extension is open source under the GPL-3.0.</p>
-      <ul class="links">
-        <li><a href="https://github.com/dabdabplayer/Not-an-island/blob/main/NotAnIslandKit/README.md">Read the developer guide</a></li>
-        <li><a href="https://github.com/dabdabplayer/Not-an-island/tree/main/Examples/Timer">See the Timer example</a></li>
-      </ul>
-    </section>
-
-    <section class="community" aria-labelledby="community">
-      <h2 id="community">Join the community</h2>
-      <p>The Discord is where to report a problem, ask for help or suggest what the notch should do next. Extension developers get their own role and channels.</p>
-      <a class="button button-discord" href="https://discord.gg/aWxyDwDuDb">Join the Discord</a>
+      <p class="note">You do this once for each version. After an update, macOS asks again before Not an Island can read Music and Bluetooth.</p>
     </section>
   </main>
 
+  <section class="developers" aria-labelledby="developers" data-scene="timer">
+    <div class="developers-inner">
+      <div>
+        <h2 id="developers">Build for the notch</h2>
+        <p>An extension is a few SwiftUI views. Not an Island draws them in the wings, the bubble, the open notch and banners, runs each extension in its own sandboxed process, and handles every animation.</p>
+        <p>Every extension is open source under the GPL-3.0, like Not an Island itself.</p>
+        <ul class="links">
+          <li><a href="https://github.com/dabdabplayer/Not-an-island/blob/main/NotAnIslandKit/README.md">Read the developer guide</a></li>
+          <li><a href="https://github.com/dabdabplayer/Not-an-island/tree/main/Examples/Timer">See the Timer example</a></li>
+        </ul>
+      </div>
+      <pre class="code" aria-label="Example extension code"><code><span class="k">import</span> NotAnIslandKit
+<span class="k">import</span> SwiftUI
+
+<span class="a">@main</span>
+<span class="k">struct</span> <span class="t">CoffeeExtension</span>: <span class="t">NotchActivityExtension</span> {
+    <span class="k">let</span> controller = <span class="t">NotchActivityController</span>(
+        isActive: <span class="k">true</span>,
+        sizes: <span class="t">NotchActivitySizes</span>(compactSideWidth: <span class="n">40</span>)
+    )
+
+    <span class="k">var</span> compactLeading: <span class="k">some</span> <span class="t">View</span> {
+        <span class="t">Image</span>(systemName: <span class="s">"cup.and.saucer.fill"</span>)
+    }
+    <span class="k">var</span> compactTrailing: <span class="k">some</span> <span class="t">View</span> {
+        <span class="t">Text</span>(<span class="s">"2 left"</span>)
+    }
+}</code></pre>
+    </div>
+  </section>
+
+  <section class="community" aria-labelledby="community" data-scene="timer">
+    <div class="community-inner">
+      <h2 id="community">Made by the community, for the community.</h2>
+      <p>Not an Island is built in the open by the people who use it. Join the Discord to report a problem, get help, suggest what the notch should do next or show what you've made. Extension developers get their own role and channels.</p>
+      <div class="community-actions">
+        <a class="button button-light" href="https://discord.gg/aWxyDwDuDb">Join the Discord</a>
+        <a class="button button-outline" href="https://github.com/dabdabplayer/Not-an-island">View the source</a>
+      </div>
+    </div>
+  </section>
+
   <footer>
     <p>Not an Island is free software under the <a href="https://github.com/dabdabplayer/Not-an-island/blob/main/LICENSE">GPL-3.0</a>.</p>
-    <p><a href="https://github.com/dabdabplayer/Not-an-island">Source code on GitHub</a></p>
+    <p>Set in <a href="fonts/OFL.txt">Bricolage Grotesque</a>.</p>
   </footer>
 
-  <script>
-    const notch = document.querySelector('.notch');
-    const setExpanded = expanded => {
-      notch.setAttribute('aria-expanded', expanded);
-      notch.setAttribute('aria-label', expanded ? 'Show the compact notch' : 'Show the expanded notch');
-    };
-    // Pointers expand it like the real notch; taps and keys toggle it.
-    notch.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') setExpanded(true); });
-    notch.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') setExpanded(false); });
-    notch.addEventListener('click', e => {
-      if (e.pointerType !== 'mouse') setExpanded(notch.getAttribute('aria-expanded') !== 'true');
-    });
-
-    fetch('https://api.github.com/repos/dabdabplayer/Not-an-island/releases/latest')
-      .then(response => response.ok ? response.json() : null)
-      .then(release => {
-        if (!release?.tag_name) return;
-        const version = document.querySelector('.version');
-        version.textContent = ` Version ${release.tag_name.replace(/^v/, '')}.`;
-        version.hidden = false;
-      })
-      .catch(() => {});
-  </script>
+  <script src="notch.js"></script>
 </body>
 </html>
