@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A00000000000000000000031 /* NotAnIsland.appextensionpoint in Embed Extension Point */ = {isa = PBXBuildFile; fileRef = A00000000000000000000030 /* NotAnIsland.appextensionpoint */; };
 		A00000000000000000000042 /* NotAnIslandKit in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000041 /* NotAnIslandKit */; };
+		A00000000000000000000045 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = A00000000000000000000044 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000042 /* NotAnIslandKit in Frameworks */,
+				A00000000000000000000045 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -114,6 +116,7 @@
 			name = NotAnIsland;
 			packageProductDependencies = (
 				A00000000000000000000041 /* NotAnIslandKit */,
+				A00000000000000000000044 /* Sparkle */,
 			);
 			productName = NotAnIsland;
 			productReference = A00000000000000000000006 /* NotAnIsland.app */;
@@ -164,6 +167,7 @@
 			buildConfigurationList = A00000000000000000000018 /* Build configuration list for PBXProject "NotAnIsland" */;
 			packageReferences = (
 				A00000000000000000000040 /* XCLocalSwiftPackageReference "." */,
+				A00000000000000000000043 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -289,9 +293,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotAnIsland.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "NotAnIsland-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Not an Island";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -302,7 +307,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.arysha.NotAnIsland;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -315,9 +320,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NotAnIsland.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "NotAnIsland-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Not an Island";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -328,7 +334,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.arysha.NotAnIsland;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -341,7 +347,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.arysha.NotAnIslandTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NotAnIsland.app/Contents/MacOS/NotAnIsland";
@@ -354,7 +360,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.arysha.NotAnIslandTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NotAnIsland.app/Contents/MacOS/NotAnIsland";
@@ -400,11 +406,27 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		A00000000000000000000043 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		A00000000000000000000041 /* NotAnIslandKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A00000000000000000000040 /* XCLocalSwiftPackageReference "." */;
 			productName = NotAnIslandKit;
+		};
+		A00000000000000000000044 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A00000000000000000000043 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -28,7 +28,17 @@ if [[ -z $identity ]]; then
   echo "warning: macOS will ask for permissions again after every reinstall." >&2
 fi
 
-codesign --force --options runtime --timestamp=none \
+# The hardened runtime only loads frameworks signed by the same team, which an ad hoc
+# signature never is. Like Xcode, leave it off ad hoc builds; it only matters for notarization.
+signing=(--force --timestamp=none)
+[[ $identity == - ]] || signing+=(--options runtime)
+
+# Sign inside out, so Sparkle's helpers carry the same identity as the app.
+sparkle=$app/Contents/Frameworks/Sparkle.framework/Versions/B
+for nested in $sparkle/XPCServices/*.xpc $sparkle/Autoupdate $sparkle/Updater.app $app/Contents/Frameworks/Sparkle.framework; do
+  codesign $signing --sign "$identity" "$nested"
+done
+codesign $signing \
   --entitlements NotAnIsland.entitlements \
   --sign "$identity" "$app"
 codesign --verify --strict --verbose=2 "$app"

@@ -33,12 +33,25 @@ jobs:
             exit 1
           fi
 
+      # Installed copies read releases/latest/download/appcast.xml and install only DMGs signed with this key.
+      - name: Sign the update
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$SPARKLE_PRIVATE_KEY" ]]; then
+            echo "::error::The SPARKLE_PRIVATE_KEY secret is missing."
+            exit 1
+          fi
+          cp build/NotAnIsland-*.dmg build/NotAnIsland.dmg
+          scripts/appcast.sh build/Build/Products/Release/NotAnIsland.app build/NotAnIsland.dmg \
+            "https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/NotAnIsland.dmg" > build/appcast.xml
+          cat build/appcast.xml
+
       # The website links to releases/latest/download/NotAnIsland.dmg, so the name never changes.
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp build/NotAnIsland-*.dmg build/NotAnIsland.dmg
-          gh release create "$GITHUB_REF_NAME" build/NotAnIsland.dmg \
+          gh release create "$GITHUB_REF_NAME" build/NotAnIsland.dmg build/appcast.xml \
             --title "Not an Island ${GITHUB_REF_NAME#v}" \
             --generate-notes

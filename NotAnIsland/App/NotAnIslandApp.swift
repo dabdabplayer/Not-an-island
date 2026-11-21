@@ -8,7 +8,7 @@ struct NotAnIslandApp: App {
     var body: some Scene {
         // SwiftUI requires at least one scene; the notch itself is an AppKit panel owned by Core.
         Settings {
-            SettingsView(activities: appDelegate.activities, priority: appDelegate.priority)
+            SettingsView(activities: appDelegate.activities, priority: appDelegate.priority, updater: appDelegate.updater)
         }
     }
 }
@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var system = SystemActivity(moments: moments)
     private lazy var bluetooth = BluetoothMonitor(moments: moments)
     let priority = ActivityPriority()
+    let updater = AppUpdater()
     private(set) lazy var activities = NotchActivities(builtIns)
     private var builtIns: [any NotchActivity] { [music, system] }
     private lazy var notchController = NotchWindowController(activities: activities, moments: moments)
@@ -36,6 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bluetooth.start()
         extensionDiscovery.start()
         updateActivities()
+        updater.start()
     }
 
     /// Keeps the notch's activities in step with the enabled extensions and the user's order.

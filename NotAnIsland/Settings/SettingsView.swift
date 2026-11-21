@@ -4,11 +4,14 @@ import SwiftUI
 struct SettingsView: View {
     let activities: NotchActivities
     let priority: ActivityPriority
+    let updater: AppUpdater
 
     var body: some View {
         TabView {
             ExtensionsPane(activities: activities, priority: priority)
                 .tabItem { Label("Extensions", systemImage: "puzzlepiece.extension") }
+            UpdatesPane(updater: updater)
+                .tabItem { Label("Updates", systemImage: "arrow.down.circle") }
         }
         .frame(width: 560, height: 560)
     }
@@ -49,6 +52,36 @@ struct ExtensionsPane: View {
             }
         }
         .padding(20)
+    }
+}
+
+struct UpdatesPane: View {
+    @Bindable var updater: AppUpdater
+
+    var body: some View {
+        Form {
+            if let version = updater.availableUpdate {
+                Section {
+                    LabeledContent("Version \(version) is available") {
+                        Button("Install…", action: updater.checkForUpdates)
+                    }
+                }
+            }
+            Section {
+                Toggle("Automatically check for updates", isOn: $updater.automaticallyChecksForUpdates)
+                LabeledContent("Version \(Self.version)") {
+                    Button("Check Now", action: updater.checkForUpdates)
+                        .disabled(!updater.canCheckForUpdates)
+                }
+            } footer: {
+                Text("Updates come from Not an Island's GitHub releases and are installed only if they're signed by the project.")
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private static var version: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
     }
 }
 
