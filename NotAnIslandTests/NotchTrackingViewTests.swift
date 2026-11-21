@@ -78,3 +78,59 @@ struct NotchTrackingViewSpeedTests {
         #expect(abs(speed - 1000) < 1)
     }
 }
+
+// The panel stays large until a collapse finishes. Only the shape being animated to may expand the
+// notch, or a pointer moving back towards it reopens it from far below the visible notch.
+@MainActor
+struct NotchHoverRegionTests {
+    private let geometry = NotchGeometry(
+        screenFrame: CGRect(x: 0, y: 0, width: 1470, height: 956),
+        topInset: 32,
+        leftAuxiliaryWidth: 645.5,
+        rightAuxiliaryWidth: 645.5
+    )!
+    private let system = NotchActivityLayout(id: "system", metrics: NotchActivityMetrics(
+        compactSideWidth: nil,
+        expandedSectionSize: CGSize(width: 380, height: 44)
+    ))
+    private let timer = NotchActivityLayout(id: "timer", metrics: NotchActivityMetrics(
+        compactSideWidth: 40,
+        expandedSectionSize: CGSize(width: 300, height: 60),
+        minimalSize: CGSize(width: 26, height: 26)
+    ))
+
+    @Test func collapsingTracksOnlyTheCompactNotch() {
+        let expanded = NotchState.make(isExpanded: true, activities: [system], momentSize: nil)
+        let collapsed = NotchState.make(isExpanded: false, activities: [system], momentSize: nil)
+        let panel = NotchWindowController.panelFrame(for: expanded, geometry: geometry)
+
+        let regions = NotchWindowController.hoverRegions(for: collapsed, geometry: geometry, panelOrigin: panel.origin)
+
+        #expect(regions.notch == geometry.notchRect.offsetBy(dx: -panel.minX, dy: -panel.minY))
+        #expect(regions.bubble == nil)
+    }
+
+    @Test func bubbleIsTrackedWhereItWillBe() throws {
+        let music = NotchActivityLayout(id: "music", metrics: NotchActivityMetrics(
+            compactSideWidth: 36,
+            expandedSectionSize: CGSize(width: 380, height: 140)
+        ))
+        let compact = NotchState.make(isExpanded: false, activities: [music, timer], momentSize: nil)
+        let origin = CGPoint(x: 500, y: 800)
+        let bubble = try #require(NotchWindowController.bubbleFrame(for: compact, geometry: geometry))
+
+        let regions = NotchWindowController.hoverRegions(for: compact, geometry: geometry, panelOrigin: origin)
+
+        #expect(regions.bubble == NotchTrackingView.Bubble(activity: "timer", rect: bubble.offsetBy(dx: -500, dy: -800)))
+    }
+
+    @Test func trackingViewTracksOnlyTheGivenNotch() throws {
+        let view = NotchTrackingView(frame: CGRect(x: 0, y: 0, width: 380, height: 140))
+        view.notch = CGRect(x: 100, y: 108, width: 180, height: 32)
+
+        let area = try #require(view.trackingAreas.first)
+        #expect(view.trackingAreas.count == 1)
+        #expect(area.rect == CGRect(x: 100, y: 108, width: 180, height: 32))
+        #expect(!area.options.contains(.inVisibleRect))
+    }
+}

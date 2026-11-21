@@ -179,6 +179,21 @@ final class NotchWindowController: NSObject {
         return bubbleFrame(for: state, geometry: geometry).map(main.union) ?? main
     }
 
+    /// Where the pointer expands the notch, in the coordinates of a panel at `panelOrigin`: the shape and
+    /// bubble of `state`, not the whole panel, which stays large until a collapse finishes.
+    nonisolated static func hoverRegions(
+        for state: NotchState,
+        geometry: NotchGeometry,
+        panelOrigin: CGPoint
+    ) -> (notch: CGRect, bubble: NotchTrackingView.Bubble?) {
+        let toPanel = { (rect: CGRect) in rect.offsetBy(dx: -panelOrigin.x, dy: -panelOrigin.y) }
+        var bubble: NotchTrackingView.Bubble?
+        if let placement = state.bubble, let rect = bubbleFrame(for: state, geometry: geometry) {
+            bubble = NotchTrackingView.Bubble(activity: placement.activity, rect: toPanel(rect))
+        }
+        return (toPanel(frame(for: state, geometry: geometry)), bubble)
+    }
+
     /// The SwiftUI canvas is sized once to fit every state, so it never resizes during an animation.
     /// It is centred on the notch, so its width covers the farthest reach on either side.
     nonisolated static func canvasSize(geometry: NotchGeometry, activities: [NotchActivityMetrics]) -> CGSize {
@@ -339,7 +354,7 @@ final class NotchScreenController {
         guard needed.width > current.width || needed.height > current.height else { return }
         presentation.canvasSize = CGSize(width: max(needed.width, current.width), height: max(needed.height, current.height))
         if let panel {
-            coverPanel(panel.frame)
+            coverPanel(panel.frame, tracking: presentation.state)
         }
     }
 
@@ -361,12 +376,12 @@ final class NotchScreenController {
             newPanel.orderFrontRegardless()
             panel = newPanel
         }
-        coverPanel(frame)
+        coverPanel(frame, tracking: presentation.state)
     }
 
     /// Resizes the panel, re-positions the fixed-size SwiftUI canvas over the notch inside it,
-    /// and gives the bubble its own hover region.
-    private func coverPanel(_ rect: CGRect) {
+    /// and tracks the pointer over `tracked`'s shape and bubble, which the panel may be larger than.
+    private func coverPanel(_ rect: CGRect, tracking tracked: NotchState) {
         guard let panel else { return }
         panel.cover(notchRect: rect)
         let origin = panel.frame.origin
@@ -377,12 +392,8 @@ final class NotchScreenController {
                 contentSize: presentation.canvasSize
             )
         }
-        let state = presentation.state
-        if let bubble = state.bubble, let rect = NotchWindowController.bubbleFrame(for: state, geometry: geometry) {
-            trackingView?.bubble = NotchTrackingView.Bubble(activity: bubble.activity, rect: rect.offsetBy(dx: -origin.x, dy: -origin.y))
-        } else {
-            trackingView?.bubble = nil
-        }
+        let regions = NotchWindowController.hoverRegions(for: tracked, geometry: geometry, panelOrigin: origin)
+        trackingView?.setRegions(notch: regions.notch, bubble: regions.bubble)
     }
 
     private func makeContentView() -> NSView {
@@ -424,7 +435,7 @@ final class NotchScreenController {
         }
         let target = frame(for: state)
         Self.logger.debug("Transition to \(String(describing: state), privacy: .public), target \(String(describing: target), privacy: .public)")
-        coverPanel(panel.frame.union(target))
+        coverPanel(panel.frame.union(target), tracking: state)
 
         let shapeSize = NotchWindowController.frame(for: state, geometry: geometry).size
         let bubble = bubblePlacement(for: state)
@@ -432,7 +443,7 @@ final class NotchScreenController {
             presentation.state = state
             presentation.shapeSize = shapeSize
             presentation.bubble = bubble
-            coverPanel(target)
+            coverPanel(target, tracking: state)
             return
         }
 
@@ -446,7 +457,7 @@ final class NotchScreenController {
                 Self.logger.debug("Transition to \(String(describing: state), privacy: .public) superseded")
                 return
             }
-            coverPanel(frame(for: state))
+            coverPanel(frame(for: state), tracking: state)
             Self.logger.debug("Transition finished; panel \(String(describing: self.panel?.frame), privacy: .public)")
         }
     }
@@ -469,12 +480,31 @@ final class NotchTrackingView: NSView {
     /// Speed in points per second, or nil if no movement was seen inside the notch.
     var onPointerExited: (Double?) -> Void = { _ in }
 
+    /// The notch's shape; the whole view until set.
+    var notch: CGRect? {
+        didSet {
+            guard notch != oldValue else { return }
+            updateTrackingAreas()
+        }
+    }
+
     /// With a bubble, the notch region stops short of the gap before it, so the gap expands nothing.
     var bubble: Bubble? {
         didSet {
             guard bubble != oldValue else { return }
             updateTrackingAreas()
         }
+    }
+
+    private var isSettingRegions = false
+
+    /// Sets both regions with a single rebuild of the tracking areas.
+    func setRegions(notch: CGRect, bubble: Bubble?) {
+        isSettingRegions = true
+        self.notch = notch
+        self.bubble = bubble
+        isSettingRegions = false
+        updateTrackingAreas()
     }
 
     private var speedTracker = PointerSpeedTracker()
@@ -485,18 +515,21 @@ final class NotchTrackingView: NSView {
     }
 
     override func updateTrackingAreas() {
+        guard !isSettingRegions else { return }
         trackingAreas.forEach(removeTrackingArea)
         // `.activeAlways` is required: this agent app is never the active app.
         let options: NSTrackingArea.Options = [.mouseEnteredAndExited, .mouseMoved, .activeAlways]
-        guard let bubble else {
+        if notch == nil, bubble == nil {
             addTrackingArea(NSTrackingArea(rect: .zero, options: options.union(.inVisibleRect), owner: self, userInfo: nil))
             super.updateTrackingAreas()
             return
         }
-        var notch = bounds
-        notch.size.width = max(bubble.rect.minX - NotchGeometry.bubbleGap - bounds.minX, 0)
-        addTrackingArea(NSTrackingArea(rect: notch, options: options, owner: self, userInfo: nil))
-        addTrackingArea(NSTrackingArea(rect: bubble.rect, options: options, owner: self, userInfo: [Self.bubbleKey: bubble.activity]))
+        var notchArea = notch ?? bounds
+        if let bubble {
+            notchArea.size.width = max(min(notchArea.maxX, bubble.rect.minX - NotchGeometry.bubbleGap) - notchArea.minX, 0)
+            addTrackingArea(NSTrackingArea(rect: bubble.rect, options: options, owner: self, userInfo: [Self.bubbleKey: bubble.activity]))
+        }
+        addTrackingArea(NSTrackingArea(rect: notchArea, options: options, owner: self, userInfo: nil))
         super.updateTrackingAreas()
     }
 
